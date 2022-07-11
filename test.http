@@ -1,0 +1,24 @@
+POST {{host}}
+Content-Type:application/json
+
+{
+  "email": "fess932@gmasil.com",
+  "amount": "123.12"
+}
+
+### 1
+GET {{host}}/amount/33f5e06b-d638-4453-9335-63e9a1d345e6
+
+### 2
+GET {{host}}/amount/27cdc02b-2e8f-4bf1-94d9-e154ce006adf
+
+### transfer
+
+POST {{host}}/transfer
+Content-Type: application/json
+
+{
+  "fromID": "33f5e06b-d638-4453-9335-63e9a1d345e6",
+  "toID": "27cdc02b-2e8f-4bf1-94d9-e154ce006adf",
+  "amount": "12.1"
+}
