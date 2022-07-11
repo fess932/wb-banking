@@ -8,8 +8,11 @@ import (
 )
 
 func main() {
-	r := chi.NewRouter()
+	log.Fatal(http.ListenAndServe(":8080", rest()))
+}
 
+func rest() http.Handler {
+	r := chi.NewRouter()
 	uc := account.NewUsecase()
 	delivery := account.NewHTTPDelivery(uc)
 
@@ -17,7 +20,7 @@ func main() {
 	r.Get("/amount/{id}", delivery.Amount)
 	r.Post("/transfer", delivery.Transfer)
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	return r
 }
 
 // create account
