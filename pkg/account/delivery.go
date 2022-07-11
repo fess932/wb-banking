@@ -74,7 +74,7 @@ func (h *HTTPDelivery) Amount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResponse(w, amount)
+	jsonResponse(w, amount.String())
 }
 
 type TransferRequest struct {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,7 +26,10 @@ func newTests() *TestState {
 type JSON map[string]interface{}
 
 func (j JSON) String() string {
-	b, _ := json.Marshal(j)
+	b, err := json.Marshal(j)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return string(b)
 }
 
@@ -50,7 +54,7 @@ func Test_mainTest(t *testing.T) {
 				"amount": "123.45",
 			},
 			Method: http.MethodPost,
-			Path:   ts.renderPath("/"),
+			Path:   ts.renderPath("/", ""),
 			Custom: func(t *testing.T, r io.Reader) error {
 				body := struct {
 					Body struct {
@@ -69,11 +73,12 @@ func Test_mainTest(t *testing.T) {
 		},
 		{
 			name: "регистрация 2",
-			Body: map[string]interface{}{
+			Body: JSON{
 				"email":  "email2@email.ru",
 				"amount": "123.45",
 			},
-			Path: ts.renderPath("/"),
+			Method: http.MethodPost,
+			Path:   ts.renderPath("/", ""),
 			Custom: func(t *testing.T, r io.Reader) error {
 				body := struct {
 					Body struct {
@@ -92,22 +97,26 @@ func Test_mainTest(t *testing.T) {
 		},
 		{
 			name: "регистрация- ошибка аккаунт уже создан",
+			Body: JSON{
+				"email":  "email1@email.ru",
+				"amount": "123.45",
+			},
+			Method: http.MethodPost,
+			Path:   ts.renderPath("/", ""),
+			Status: http.StatusInternalServerError,
+			Result: JSON{
+				"error": "account exists",
+			},
+		},
+		{
+			name: "amount",
 			Body: map[string]interface{}{
 				"email":  "email2@email.ru",
 				"amount": "123.45",
 			},
-			Status: http.StatusInternalServerError,
-			Result: JSON{
-				"error": "user existss",
-			},
+			Path:   ts.renderPath("/amount", "account1"),
+			Result: JSON{},
 		},
-		//{
-		//	name: "amount",
-		//	Body: map[string]interface{}{
-		//		"email":  "email2@email.ru",
-		//		"amount": "123.45",
-		//	},
-		//},
 		//{
 		//	name: "amount error: account not exists",
 		//	Body: map[string]interface{}{
@@ -142,8 +151,10 @@ func Test_mainTest(t *testing.T) {
 				require.NoError(t, err, "cant encode body to buffer")
 
 				req, err = http.NewRequest(tt.Method, tt.Path(), bytes.NewBuffer(data))
+				require.NoError(t, err)
+
 				req.Header.Add("Content-Type", "application/json")
-			case nil:
+			default:
 				req, err = http.NewRequest(tt.Method, tt.Path(), nil)
 			}
 
@@ -181,10 +192,24 @@ func Test_mainTest(t *testing.T) {
 	}
 }
 
-func (t *TestState) renderPath(staticPath string) func() string {
+func (t *TestState) renderPath(staticPath string, id string) func() string {
 	return func() string {
 		st := staticPath
 		st = t.server.URL + st
-		return st
+
+		if id == "" {
+			return st
+		}
+
+		switch id {
+		case "account1":
+			return st + "/" + t.account1
+
+		case "account2":
+			return st + "/" + t.account2
+
+		default:
+			return st
+		}
 	}
 }
