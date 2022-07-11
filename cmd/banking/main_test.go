@@ -35,9 +35,11 @@ func Test_mainTest(t *testing.T) {
 	tests := []struct {
 		name   string
 		Body   interface{}
-		Status int
 		Method string
 		Path   func() string
+
+		// response
+		Status int
 		Result fmt.Stringer
 		Custom func(t *testing.T, r io.Reader) error
 	}{
@@ -47,7 +49,8 @@ func Test_mainTest(t *testing.T) {
 				"email":  "email1@email.ru",
 				"amount": "123.45",
 			},
-			Path: ts.renderPath("/"),
+			Method: http.MethodPost,
+			Path:   ts.renderPath("/"),
 			Custom: func(t *testing.T, r io.Reader) error {
 				body := struct {
 					Body struct {
@@ -93,6 +96,10 @@ func Test_mainTest(t *testing.T) {
 				"email":  "email2@email.ru",
 				"amount": "123.45",
 			},
+			Status: http.StatusInternalServerError,
+			Result: JSON{
+				"error": "user existss",
+			},
 		},
 		//{
 		//	name: "amount",
@@ -120,13 +127,6 @@ func Test_mainTest(t *testing.T) {
 		//},
 		//{},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mainTest()
-		})
-	}
-
-	//s := httptest.NewServer(rest())
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -151,6 +151,7 @@ func Test_mainTest(t *testing.T) {
 			require.NoError(t, err, "request error")
 			defer resp.Body.Close()
 
+			// result check
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
